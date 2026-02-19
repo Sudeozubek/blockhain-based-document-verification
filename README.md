@@ -2,6 +2,8 @@
 
 <hr>
 
+[Project_Plan_Final.xlsx](https://github.com/user-attachments/files/25420662/Project_Plan_Final.xlsx)
+
 <h2>1. Project Description</h2>
 
 <p>
@@ -35,7 +37,6 @@ within a structured Software Development Life Cycle (SDLC).
 </ul>
 
 <hr>
-[Project_Plan_Final.xlsx](https://github.com/user-attachments/files/25420662/Project_Plan_Final.xlsx)
 
 <h2>3. System Architecture</h2>
 
