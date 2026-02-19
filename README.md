@@ -228,5 +228,5 @@ pytest --cov=app
 <hr>
 
 <p align="center">
-Developed as part of an academic Project Management course.
+Developed as part of an academic Software Project Management course.
 </p>
