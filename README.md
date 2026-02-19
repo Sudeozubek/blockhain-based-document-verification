@@ -1,9 +1,5 @@
 <h1 align="center">Blockchain-Based Document Integrity Verification System</h1>
 
-<p align="center">
-Academic Project – Software Development Lifecycle (Agile) Implementation
-</p>
-
 <hr>
 
 <h2>1. Project Description</h2>
