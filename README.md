@@ -54,6 +54,11 @@ within a structured Software Development Life Cycle (SDLC).
 
 <hr>
 
+<h2> UML Diagram </h2>
+
+<img width="1302" height="796" alt="image" src="https://github.com/user-attachments/assets/31a3923f-b717-4186-9968-045585393b2e" />
+
+
 <h2>4. Technology Stack</h2>
 
 <h3>Backend</h3>
