@@ -5,11 +5,11 @@
 [Project_Plan_Final.xlsx](https://github.com/user-attachments/files/25420662/Project_Plan_Final.xlsx)
 
 Group members
-•⁠  ⁠Özge Zelal Küçük — Project Manager
-•⁠  ⁠Kevser Agdas — System Analyst
-•⁠  ⁠Muhammed Dönmez — Backend Developer
-•⁠  ⁠Sude Özübek — Frontend Devel
-•⁠  ⁠Yağmur Saraçoğlu — QA & DevOpos
+<li> ⁠Özge Zelal Küçük — Project Manager
+<li> ⁠Kevser Agdas — System Analyst
+<li> ⁠Muhammed Dönmez — Backend Developer
+<li> ⁠Sude Özübek — Frontend Developer
+<li> ⁠Yağmur Saraçoğlu — QA & DevOpos
 
 Jira Board: 
 https://stu-team-xpgexxr4.atlassian.net/jira/software/projects/SCRUM/boards/1
