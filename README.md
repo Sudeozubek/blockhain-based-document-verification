@@ -4,7 +4,7 @@
 
 [Project_Plan_Final.xlsx](https://github.com/user-attachments/files/25420662/Project_Plan_Final.xlsx)
 
-Group members
+<h2> Group members </h2>
 <li> ⁠Özge Zelal Küçük — Project Manager
 <li> ⁠Kevser Agdas — System Analyst
 <li> ⁠Muhammed Dönmez — Backend Developer
