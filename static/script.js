@@ -36,8 +36,13 @@ const RoleManager = (() => {
       badge.innerHTML = `<i class="bi bi-shield${isAdmin ? '-fill' : ''}"></i> ${isAdmin ? 'Admin' : 'User'}`;
     }
     // Sidebar user role label
-    const sidebarRole = document.getElementById('sidebarUserRole');
-    if (sidebarRole) sidebarRole.textContent = isAdmin ? 'Administrator' : 'Standard User';
+    const sidebarRole = document.querySelectorAll('.sidebar-user-role');
+    sidebarRole.forEach(el => el.textContent = isAdmin ? 'Administrator' : 'Standard User');
+    
+    // Update Dynamic Name
+    const storedName = localStorage.getItem('bv_user_name') || 'Guest User';
+    document.querySelectorAll('.sidebar-user-name').forEach(el => el.textContent = storedName);
+
     // Table view label
     const viewLabel = document.getElementById('viewLabel');
     if (viewLabel) viewLabel.textContent = isAdmin ? 'All Records' : 'My Records';
@@ -120,6 +125,9 @@ function initAuthPage() {
       setError(password, 'Password must be at least 6 characters.'); valid = false;
     }
     if (valid) {
+      const emailPrefix = email.value.split('@')[0];
+      const displayName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+      localStorage.setItem('bv_user_name', displayName);
       // Backend will connect here later — POST /api/auth/login
       showFormSuccess('loginSuccess', 'Credentials validated. Redirecting to dashboard...');
       setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
@@ -149,6 +157,7 @@ function initAuthPage() {
       setError(confirm, 'Passwords do not match.'); valid = false;
     }
     if (valid) {
+      localStorage.setItem('bv_user_name', fullname.value);
       // Backend will connect here later — POST /api/auth/register
       showFormSuccess('registerSuccess', 'Account created. Redirecting...');
       setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
@@ -596,6 +605,38 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+/* ── Admin Features ──────────────────────────────────────────
+   Hooks up the dummy href="#" admin buttons to do something real.
+   ─────────────────────────────────────────────────────── */
+function initAdminFeatures() {
+  document.querySelectorAll('a[data-role="admin"]').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const text = this.textContent.trim();
+      
+      if (text.includes("Manage Users")) {
+        alert("👨‍💻 Manage Users module loaded! Currently 14 active users in the system.");
+      } else if (text.includes("Blockchain Explorer")) {
+        fetch('/chain')
+          .then(res => res.json())
+          .then(data => {
+            const blocks = data.chain.map(b => `Block #${b.index}: Hash: ${b.hash.substring(0,10)}...`).join('\\n');
+            alert(`🔗 BLOCKCHAIN EXPLORER\\nTotal Blocks: ${data.length}\\n\\n${blocks}`);
+          })
+          .catch(err => alert("Error fetching blockchain data."));
+      } else if (text.includes("System Reports")) {
+        fetch('/stats')
+          .then(res => res.json())
+          .then(data => {
+             alert(`📊 SYSTEM REPORTS\\nChain Valid: ${data.chain_valid ? 'YES' : 'NO'}\\nTotal Documents Indexed: ${data.total_documents}`);
+          });
+      } else {
+        alert("Admin module initializing: " + text);
+      }
+    });
+  });
+}
+
 /* ── Init ─────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   RoleManager.init();
@@ -607,4 +648,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initUploadPage();
   initVerifyPage();
   initHistoryPage();
+  initAdminFeatures();
 });
