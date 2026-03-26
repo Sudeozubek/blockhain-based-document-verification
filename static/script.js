@@ -181,25 +181,28 @@ function initDashboard() {
   const tamperEl   = document.getElementById('statTamper');
   if (!totalEl) return;
 
-  // Backend will connect here later — replace MockData.stats with real API
-  animateCounter(totalEl,    0, MockData.stats.totalContracts, 900);
-  animateCounter(verifiedEl, 0, MockData.stats.verified,       900);
-  animateCounter(tamperEl,   0, MockData.stats.tamperAlerts,   900);
+  fetch('/stats').then(res => res.json()).then(data => {
+      animateCounter(totalEl,    0, data.total_documents || 0, 900);
+      animateCounter(verifiedEl, 0, data.chain_valid ? data.total_documents : 0, 900);
+      animateCounter(tamperEl,   0, data.chain_errors || 0, 900);
+  }).catch(err => console.error("Error fetching stats:", err));
 
-  // Render activity feed
-  // Backend will connect here later — GET /api/activity/recent
   const feed = document.getElementById('activityFeed');
   if (feed) {
-    feed.innerHTML = MockData.recentActivity.map(item => `
-      <div class="activity-item">
-        <span class="activity-dot dot-${item.type}"></span>
-        <div class="activity-text">
-          <span>${item.text}</span><br>
-          <small class="text-muted-app">${item.user}</small>
+    fetch('/documents').then(res => res.json()).then(data => {
+      const docs = data.documents || [];
+      const recent = docs.slice(0, 5);
+      feed.innerHTML = recent.map(item => `
+        <div class="activity-item">
+          <span class="activity-dot dot-upload"></span>
+          <div class="activity-text">
+            <span><strong>${escHtml(item.filename)}</strong> uploaded</span><br>
+            <small class="text-muted-app">Block #${escHtml(String(item.block_index))}</small>
+          </div>
+          <span class="activity-time">${escHtml(item.registered_at_formatted)}</span>
         </div>
-        <span class="activity-time">${item.time}</span>
-      </div>
-    `).join('');
+      `).join('');
+    }).catch(err => console.error("Error fetching activity:", err));
   }
 }
 
@@ -269,15 +272,24 @@ function initUploadPage() {
     if (!selectedFile) {
       showUploadAlert('danger', '<i class="bi bi-x-circle-fill me-2"></i>Please select a PDF file first.'); return;
     }
-    // Backend will connect here later — POST /api/contracts/upload (multipart/form-data)
     showUploadAlert('info', '<i class="bi bi-arrow-repeat me-2"></i>Uploading and hashing document...');
-    setTimeout(() => {
-      showUploadAlert('success',
-        '<i class="bi bi-check-circle-fill me-2"></i><strong>Upload successful.</strong> ' +
-        'The document has been hashed and recorded on the ledger.'
-      );
-      clearFile();
-    }, 1800);
+    
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    fetch('/upload', { method: 'POST', body: formData })
+      .then(res => res.json().then(data => ({ status: res.status, body: data })))
+      .then(({ status, body }) => {
+        if (status === 201) {
+          showUploadAlert('success', '<i class="bi bi-check-circle-fill me-2"></i><strong>Upload successful.</strong> Block #' + body.block_index + ' added.');
+          clearFile();
+        } else if (status === 409) {
+          showUploadAlert('warning', '<i class="bi bi-exclamation-triangle-fill me-2"></i>Document already registered at block #' + body.existing_block_index);
+        } else {
+          showUploadAlert('danger', '<i class="bi bi-x-circle-fill me-2"></i>Error: ' + (body.error || 'Upload failed'));
+        }
+      })
+      .catch(err => showUploadAlert('danger', 'Network error.'));
   });
 }
 
@@ -329,41 +341,29 @@ function initVerifyPage() {
       setVerifyStatus('not-found', 'No File Selected', 'Please upload a PDF to verify.', null); return;
     }
 
-    // Simulate loading state
     setVerifyStatus('idle', 'Verifying...', 'Computing hash and querying the ledger. Please wait.', null);
 
-    // Backend will connect here later — POST /api/contracts/verify (multipart/form-data)
-    setTimeout(() => {
-      // Cycle through mock results for demonstration: verified → tampered → not-found
-      const cycle = ['verified', 'tampered', 'not-found'];
-      const state = window._verifyState = cycle[(((window._verifyState || -1) === 'verified' ? 0 :
-        (window._verifyState === 'tampered' ? 1 : 2)) + 1) % 3];
+    const formData = new FormData();
+    formData.append('file', verifyFile);
 
-      const ts = new Date().toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'medium' });
-
-      if (state === 'verified') {
-        renderHashes(MockData.hashes.stored, MockData.hashes.stored, true);
-        setVerifyStatus('verified',
-          'Document Verified',
-          'The document hash matches the stored record. Integrity confirmed.',
-          ts
-        );
-      } else if (state === 'tampered') {
-        renderHashes(MockData.hashes.stored, MockData.hashes.tampered, false);
-        setVerifyStatus('tampered',
-          'Tamper Detected!',
-          'The computed hash does not match the stored record. This document may have been altered.',
-          ts
-        );
-      } else {
-        renderHashes('—', '—', null);
-        setVerifyStatus('not-found',
-          'Document Not Found',
-          'No record was found for this document on the ledger. It may not have been registered.',
-          ts
-        );
-      }
-    }, 1600);
+    fetch('/verify', { method: 'POST', body: formData })
+      .then(res => res.json())
+      .then(data => {
+        const ts = data.registered_at || null;
+        if (data.verified && data.status === 'ORIGINAL') {
+          renderHashes(data.original_hash, data.current_hash, true);
+          setVerifyStatus('verified', 'Document Verified', 'The document hash matches the stored record. Integrity confirmed.', ts);
+        } else if (data.status === 'TAMPERED') {
+          renderHashes(data.original_hash, data.current_hash, false);
+          setVerifyStatus('tampered', 'Tamper Detected!', 'The computed hash does not match the stored record. This document may have been altered.', ts);
+        } else {
+          renderHashes('—', data.current_hash || '—', null);
+          setVerifyStatus('not-found', 'Document Not Found', data.message || 'No record was found for this document on the ledger.', null);
+        }
+      })
+      .catch(err => {
+        setVerifyStatus('not-found', 'Error', 'Failed to communicate with server.', null);
+      });
   });
 }
 
@@ -422,50 +422,40 @@ function initHistoryPage() {
   const tableBody = document.getElementById('auditTableBody');
   if (!tableBody) return;
 
-  // Backend will connect here later — GET /api/audit-log?role=...&user=...
-  let data = [...MockData.auditLog];
   const isAdmin = RoleManager.get() === RoleManager.ROLES.ADMIN;
+  let allRecords = [];
 
-  // User sees only own records (mock: first 5)
-  if (!isAdmin) data = data.slice(0, 5);
-
-  renderTable(data);
+  fetch('/documents').then(res => res.json()).then(data => {
+    allRecords = data.documents || [];
+    if (!isAdmin) allRecords = allRecords.slice(0, 5);
+    applyFilters();
+  });
 
   // Search
   const searchInput  = document.getElementById('searchInput');
-  const filterResult = document.getElementById('filterResult');
-  const filterAction = document.getElementById('filterAction');
 
   function applyFilters() {
     const q      = (searchInput?.value || '').toLowerCase();
-    const result = (filterResult?.value || '');
-    const action = (filterAction?.value || '');
-    let filtered = isAdmin ? [...MockData.auditLog] : MockData.auditLog.slice(0, 5);
-    if (q)      filtered = filtered.filter(r => r.document.toLowerCase().includes(q) || r.uploader.toLowerCase().includes(q));
-    if (result) filtered = filtered.filter(r => r.result === result);
-    if (action) filtered = filtered.filter(r => r.action.toLowerCase() === action.toLowerCase());
+    let filtered = [...allRecords];
+    if (q) filtered = filtered.filter(r => r.filename.toLowerCase().includes(q) || r.file_hash.toLowerCase().includes(q));
+    
     renderTable(filtered);
     const countEl = document.getElementById('recordCount');
     if (countEl) countEl.textContent = `${filtered.length} record${filtered.length !== 1 ? 's' : ''}`;
   }
 
   searchInput  && searchInput.addEventListener('input', applyFilters);
-  filterResult && filterResult.addEventListener('change', applyFilters);
-  filterAction && filterAction.addEventListener('change', applyFilters);
 
   const clearBtn = document.getElementById('clearFilters');
   clearBtn && clearBtn.addEventListener('click', () => {
     if (searchInput)  searchInput.value  = '';
-    if (filterResult) filterResult.value = '';
-    if (filterAction) filterAction.value = '';
     applyFilters();
   });
 
   // Export placeholder
   const exportBtn = document.getElementById('exportBtn');
   exportBtn && exportBtn.addEventListener('click', () => {
-    // Backend will connect here later — GET /api/audit-log/export
-    alert('Export functionality will be available once the backend is connected.');
+    alert('Export functionality will be run with real backend endpoints.');
   });
 }
 
@@ -482,25 +472,19 @@ function renderTable(data) {
   if (empty) empty.style.display = 'none';
 
   tbody.innerHTML = data.map(row => {
-    const badgeMap = {
-      verified: '<span class="badge-status badge-verified">Verified</span>',
-      tampered: '<span class="badge-status badge-tampered">Tampered</span>',
-      uploaded: '<span class="badge-status badge-uploaded">Uploaded</span>',
-      pending:  '<span class="badge-status badge-pending">Pending</span>',
-    };
     return `
       <tr>
         <td>
           <div class="d-flex align-items-center gap-2">
             <i class="bi bi-file-earmark-pdf text-danger-app"></i>
-            <span class="fw-500">${escHtml(row.document)}</span>
+            <span class="fw-500" title="${escHtml(row.file_hash)}">${escHtml(row.filename)}</span>
           </div>
         </td>
-        <td class="text-secondary-app">${escHtml(row.uploader)}</td>
-        <td>${escHtml(row.action)}</td>
-        <td class="mono text-muted-app">${escHtml(row.timestamp)}</td>
-        <td>${badgeMap[row.result] || row.result}</td>
-        <td class="mono text-muted-app">#${row.block}</td>
+        <td class="text-secondary-app">${formatBytes(row.file_size)}</td>
+        <td>Upload</td>
+        <td class="mono text-muted-app">${escHtml(row.registered_at_formatted)}</td>
+        <td><span class="badge-status badge-verified">Verified</span></td>
+        <td class="mono text-muted-app">#${row.block_index}</td>
       </tr>
     `;
   }).join('');
