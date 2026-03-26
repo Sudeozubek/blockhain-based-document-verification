@@ -116,6 +116,15 @@ blockchain-doc-verify/
 │   ├── static/
 │   └── extensions.py
 │
+├── frontend/
+│   ├── index.html
+│   ├── dashboard.html
+│   ├── upload.html
+│   ├── verify.html
+│   ├── history.html
+│   ├── style.css
+│   └── script.js
+│
 ├── database/
 ├── tests/
 ├── docs/
