@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload Contract — BlockVerify</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link href="style.css" rel="stylesheet" />
+</head>
+<body>
+
+<div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99;"></div>
+
+<div class="app-shell">
+
+  <!-- ── Sidebar ── -->
+  <nav class="sidebar" id="sidebar" aria-label="Main navigation">
+    <div class="sidebar-header">
+      <div class="sidebar-logo-icon"><i class="bi bi-shield-lock-fill"></i></div>
+      <div>
+        <div class="sidebar-logo-text">BlockVerify</div>
+        <div class="sidebar-logo-sub">Contract System</div>
+      </div>
+    </div>
+    <div class="sidebar-nav">
+      <span class="sidebar-section-label">Main</span>
+      <a href="dashboard.html" class="nav-item-link"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+      <a href="upload.html" class="nav-item-link active"><i class="bi bi-cloud-arrow-up"></i> Upload Contract</a>
+      <a href="verify.html" class="nav-item-link"><i class="bi bi-patch-check"></i> Verify Document</a>
+      <a href="history.html" class="nav-item-link"><i class="bi bi-clock-history"></i> Audit Log</a>
+      <span class="sidebar-section-label" data-role="admin">Administration</span>
+      <a href="#" class="nav-item-link" data-role="admin"><i class="bi bi-people"></i> Manage Users</a>
+      <a href="#" class="nav-item-link" data-role="admin"><i class="bi bi-boxes"></i> Blockchain Explorer</a>
+      <a href="#" class="nav-item-link" data-role="admin"><i class="bi bi-bar-chart-line"></i> System Reports</a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">JS</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">Jane Smith</div>
+          <div class="sidebar-user-role" id="sidebarUserRole">Standard User</div>
+        </div>
+        <a href="index.html" class="logout-btn ms-auto" title="Sign out" style="color:rgba(255,255,255,.4);font-size:16px;">
+          <i class="bi bi-box-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Main Area ── -->
+  <div class="main-area">
+    <header class="topbar">
+      <button id="sidebarToggle" class="btn btn-outline-app d-lg-none p-1 px-2 me-2" aria-label="Toggle sidebar">
+        <i class="bi bi-list" style="font-size:20px;"></i>
+      </button>
+      <div>
+        <div class="topbar-title">Upload Contract</div>
+        <div class="topbar-subtitle">Register a new document on the ledger</div>
+      </div>
+      <div class="topbar-right">
+        <div class="d-flex align-items-center gap-2" style="font-size:12px;color:var(--text-muted);">
+          <i class="bi bi-person-gear"></i>
+          <select class="form-select form-select-sm" id="roleSwitcher" style="font-size:12px;width:auto;padding:3px 28px 3px 8px;">
+            <option value="user">User View</option>
+            <option value="admin">Admin View</option>
+          </select>
+        </div>
+        <span id="roleBadge" class="role-badge user"><i class="bi bi-shield"></i> User</span>
+        <div style="width:1px;height:24px;background:var(--border);"></div>
+        <a href="index.html" class="logout-btn btn btn-outline-app btn-sm d-flex align-items-center gap-2">
+          <i class="bi bi-box-arrow-right"></i>
+          <span class="d-none d-md-inline">Sign Out</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div>
+          <h1>Upload Contract</h1>
+          <p>Select a PDF document to upload. The system will compute its SHA-256 hash and record it on the blockchain ledger.</p>
+        </div>
+        <a href="dashboard.html" class="btn btn-outline-app d-flex align-items-center gap-2">
+          <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+      </div>
+
+      <div class="row g-4">
+
+        <!-- ── Upload Form ── -->
+        <div class="col-lg-8">
+          <div class="card-app">
+            <div class="section-header">
+              <div>
+                <div class="section-title"><i class="bi bi-cloud-arrow-up me-2 text-accent" style="color:var(--accent);"></i>Document Upload</div>
+                <div class="section-sub">PDF files only &bull; Max 20 MB</div>
+              </div>
+            </div>
+            <div class="p-4">
+
+              <!-- Upload Alert (success / error) -->
+              <div id="uploadAlert" class="alert mb-4" style="display:none;"></div>
+
+              <form id="uploadForm" novalidate>
+
+                <!-- Dropzone -->
+                <div class="upload-dropzone" id="dropzone">
+                  <input type="file" id="fileInput" accept="application/pdf" aria-label="Choose PDF file" />
+                  <div class="upload-icon"><i class="bi bi-file-earmark-arrow-up"></i></div>
+                  <div class="upload-title">Drag &amp; drop your PDF here</div>
+                  <div class="upload-hint">or click to browse from your computer</div>
+                  <span class="badge bg-secondary upload-types">PDF only &bull; Max 20 MB</span>
+                </div>
+
+                <!-- File selected state -->
+                <div id="fileSelected" class="file-selected" style="display:none;">
+                  <i class="bi bi-file-earmark-pdf-fill file-selected-icon"></i>
+                  <div style="flex:1;min-width:0;">
+                    <div class="file-selected-name text-truncate" id="selectedName">filename.pdf</div>
+                    <div class="file-selected-size" id="selectedSize">—</div>
+                  </div>
+                  <button type="button" id="clearFile" class="file-clear btn btn-link p-0" aria-label="Remove selected file">
+                    <i class="bi bi-x-circle-fill"></i>
+                  </button>
+                </div>
+
+                <!-- SHA-256 Hash Preview -->
+                <div class="sha-preview" id="shaPreview">
+                  <div class="sha-label"><i class="bi bi-hash me-1"></i>SHA-256 Hash Preview</div>
+                  <div class="sha-value" id="shaValue">
+                    <span class="sha-pending">No file selected</span>
+                  </div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+                    <i class="bi bi-info-circle me-1"></i>
+                    The actual hash will be computed server-side upon upload.
+                    <!-- Backend will connect here later -->
+                  </div>
+                </div>
+
+                <hr class="divider" />
+
+                <!-- Contract Metadata -->
+                <h6 style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:16px;">
+                  <i class="bi bi-card-text me-2"></i>Contract Metadata
+                </h6>
+
+                <div class="row g-3 mb-3">
+                  <div class="col-sm-6">
+                    <label for="contractTitle" class="form-label">Document Title <span class="text-danger-app">*</span></label>
+                    <input type="text" class="form-control" id="contractTitle" placeholder="e.g. NDA Agreement v3" required />
+                  </div>
+                  <div class="col-sm-6">
+                    <label for="contractRef" class="form-label">Reference Number</label>
+                    <input type="text" class="form-control" id="contractRef" placeholder="e.g. CONTRACT-2025-001" />
+                  </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                  <div class="col-sm-6">
+                    <label for="clearanceLevel" class="form-label">Clearance Level <span class="text-danger-app">*</span></label>
+                    <select class="form-select" id="clearanceLevel" required>
+                      <option value="" disabled selected>Select clearance level</option>
+                      <option value="public">Public</option>
+                      <option value="internal">Internal</option>
+                      <option value="confidential">Confidential</option>
+                      <option value="restricted">Restricted</option>
+                    </select>
+                  </div>
+                  <div class="col-sm-6">
+                    <label for="contractType" class="form-label">Contract Type</label>
+                    <select class="form-select" id="contractType">
+                      <option value="" disabled selected>Select type</option>
+                      <option>NDA / Confidentiality</option>
+                      <option>Service Agreement</option>
+                      <option>Employment Contract</option>
+                      <option>Purchase Order</option>
+                      <option>Partnership Agreement</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="mb-4">
+                  <label for="contractNotes" class="form-label">Notes <span style="color:var(--text-muted);font-weight:400;">(optional)</span></label>
+                  <textarea class="form-control" id="contractNotes" rows="3" placeholder="Additional context or remarks..."></textarea>
+                </div>
+
+                <!-- Clearance hint -->
+                <div class="alert alert-info d-flex gap-2 align-items-start mb-4" style="font-size:12px;">
+                  <i class="bi bi-shield-lock flex-shrink-0 mt-1"></i>
+                  <div>
+                    <strong>Clearance Levels:</strong> Public — visible to all users &bull;
+                    Internal — organisation only &bull;
+                    Confidential — restricted team &bull;
+                    Restricted — admin &amp; owner only.
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <button type="submit" class="btn btn-primary-app d-flex align-items-center gap-2">
+                    <i class="bi bi-cloud-arrow-up-fill"></i> Upload &amp; Register
+                  </button>
+                  <button type="reset" class="btn btn-outline-app" id="resetFormBtn">
+                    <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
+                  </button>
+                </div>
+
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Side Information Panel ── -->
+        <div class="col-lg-4">
+
+          <!-- How it works -->
+          <div class="card-app mb-4">
+            <div class="section-header">
+              <div class="section-title">How it works</div>
+            </div>
+            <div class="p-4">
+              <div class="d-flex gap-3 mb-3">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">1</div>
+                <div>
+                  <div style="font-size:13px;font-weight:600;">Select PDF</div>
+                  <div style="font-size:12px;color:var(--text-secondary);">Choose the contract file you want to register.</div>
+                </div>
+              </div>
+              <div class="d-flex gap-3 mb-3">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">2</div>
+                <div>
+                  <div style="font-size:13px;font-weight:600;">Hash Computation</div>
+                  <div style="font-size:12px;color:var(--text-secondary);">The server computes a SHA-256 fingerprint of your document.
+                    <!-- Backend will connect here later -->
+                  </div>
+                </div>
+              </div>
+              <div class="d-flex gap-3 mb-3">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">3</div>
+                <div>
+                  <div style="font-size:13px;font-weight:600;">Ledger Recording</div>
+                  <div style="font-size:12px;color:var(--text-secondary);">The hash is written to the blockchain ledger as a new block.
+                    <!-- Backend will connect here later -->
+                  </div>
+                </div>
+              </div>
+              <div class="d-flex gap-3">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--success);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;"><i class="bi bi-check"></i></div>
+                <div>
+                  <div style="font-size:13px;font-weight:600;">Ready to verify</div>
+                  <div style="font-size:12px;color:var(--text-secondary);">The document can now be verified anytime for tamper detection.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Clearance Levels Reference -->
+          <div class="card-app">
+            <div class="section-header">
+              <div class="section-title">Clearance Reference</div>
+            </div>
+            <div class="p-4 d-flex flex-column gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge-status badge-verified clearance-public px-3 py-2" style="border-radius:6px;">Public</span>
+                <span style="font-size:12px;color:var(--text-secondary);">All authenticated users</span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge-status badge-uploaded clearance-internal px-3 py-2" style="border-radius:6px;">Internal</span>
+                <span style="font-size:12px;color:var(--text-secondary);">Organisation members</span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge-status badge-pending clearance-confidential px-3 py-2" style="border-radius:6px;">Confidential</span>
+                <span style="font-size:12px;color:var(--text-secondary);">Restricted teams only</span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge-status badge-tampered clearance-restricted px-3 py-2" style="border-radius:6px;">Restricted</span>
+                <span style="font-size:12px;color:var(--text-secondary);">Admins &amp; owner only</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

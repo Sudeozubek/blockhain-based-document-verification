@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verify Document — BlockVerify</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link href="style.css" rel="stylesheet" />
+</head>
+<body>
+
+<div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99;"></div>
+
+<div class="app-shell">
+
+  <!-- ── Sidebar ── -->
+  <nav class="sidebar" id="sidebar" aria-label="Main navigation">
+    <div class="sidebar-header">
+      <div class="sidebar-logo-icon"><i class="bi bi-shield-lock-fill"></i></div>
+      <div>
+        <div class="sidebar-logo-text">BlockVerify</div>
+        <div class="sidebar-logo-sub">Contract System</div>
+      </div>
+    </div>
+    <div class="sidebar-nav">
+      <span class="sidebar-section-label">Main</span>
+      <a href="dashboard.html" class="nav-item-link"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+      <a href="upload.html" class="nav-item-link"><i class="bi bi-cloud-arrow-up"></i> Upload Contract</a>
+      <a href="verify.html" class="nav-item-link active"><i class="bi bi-patch-check"></i> Verify Document</a>
+      <a href="history.html" class="nav-item-link"><i class="bi bi-clock-history"></i> Audit Log</a>
+      <span class="sidebar-section-label" data-role="admin">Administration</span>
+      <a href="#" class="nav-item-link" data-role="admin"><i class="bi bi-people"></i> Manage Users</a>
+      <a href="#" class="nav-item-link" data-role="admin"><i class="bi bi-boxes"></i> Blockchain Explorer</a>
+      <a href="#" class="nav-item-link" data-role="admin"><i class="bi bi-bar-chart-line"></i> System Reports</a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">JS</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">Jane Smith</div>
+          <div class="sidebar-user-role" id="sidebarUserRole">Standard User</div>
+        </div>
+        <a href="index.html" class="logout-btn ms-auto" title="Sign out" style="color:rgba(255,255,255,.4);font-size:16px;">
+          <i class="bi bi-box-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Main Area ── -->
+  <div class="main-area">
+    <header class="topbar">
+      <button id="sidebarToggle" class="btn btn-outline-app d-lg-none p-1 px-2 me-2" aria-label="Toggle sidebar">
+        <i class="bi bi-list" style="font-size:20px;"></i>
+      </button>
+      <div>
+        <div class="topbar-title">Verify Document</div>
+        <div class="topbar-subtitle">Check document integrity against the ledger</div>
+      </div>
+      <div class="topbar-right">
+        <div class="d-flex align-items-center gap-2" style="font-size:12px;color:var(--text-muted);">
+          <i class="bi bi-person-gear"></i>
+          <select class="form-select form-select-sm" id="roleSwitcher" style="font-size:12px;width:auto;padding:3px 28px 3px 8px;">
+            <option value="user">User View</option>
+            <option value="admin">Admin View</option>
+          </select>
+        </div>
+        <span id="roleBadge" class="role-badge user"><i class="bi bi-shield"></i> User</span>
+        <div style="width:1px;height:24px;background:var(--border);"></div>
+        <a href="index.html" class="logout-btn btn btn-outline-app btn-sm d-flex align-items-center gap-2">
+          <i class="bi bi-box-arrow-right"></i>
+          <span class="d-none d-md-inline">Sign Out</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div>
+          <h1>Verify Document</h1>
+          <p>Re-upload a PDF contract to check its integrity. The system will compare its current hash against the stored record on the ledger.</p>
+        </div>
+        <a href="dashboard.html" class="btn btn-outline-app d-flex align-items-center gap-2">
+          <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+      </div>
+
+      <div class="row g-4">
+
+        <!-- ── Verify Form ── -->
+        <div class="col-lg-8">
+          <div class="card-app">
+            <div class="section-header">
+              <div>
+                <div class="section-title"><i class="bi bi-patch-check me-2" style="color:var(--success);"></i>Document Verification</div>
+                <div class="section-sub">Upload the PDF you wish to verify</div>
+              </div>
+            </div>
+            <div class="p-4">
+              <form id="verifyForm" novalidate>
+
+                <!-- Dropzone -->
+                <div class="upload-dropzone" id="verifyDropzone">
+                  <input type="file" id="verifyFileInput" accept="application/pdf" aria-label="Choose PDF to verify" />
+                  <div class="upload-icon" style="background:var(--success-bg);">
+                    <i class="bi bi-file-earmark-magnify" style="color:var(--success);"></i>
+                  </div>
+                  <div class="upload-title">Drop the PDF to verify</div>
+                  <div class="upload-hint">or click to browse your files</div>
+                  <span class="badge bg-secondary upload-types">PDF only</span>
+                </div>
+
+                <!-- File selected -->
+                <div id="verifyFileSelected" class="file-selected" style="display:none;background:#f0fdf4;border-color:#bbf7d0;">
+                  <i class="bi bi-file-earmark-pdf-fill file-selected-icon" style="color:var(--success);"></i>
+                  <div style="flex:1;min-width:0;">
+                    <div class="file-selected-name text-truncate" id="verifyFileName">filename.pdf</div>
+                    <div class="file-selected-size" id="verifyFileSize">—</div>
+                  </div>
+                  <button type="button" id="clearVerifyFile" class="file-clear btn btn-link p-0" aria-label="Remove file">
+                    <i class="bi bi-x-circle-fill"></i>
+                  </button>
+                </div>
+
+                <div class="mt-4">
+                  <button type="submit" class="btn btn-primary-app d-flex align-items-center gap-2">
+                    <i class="bi bi-search"></i> Verify Document
+                  </button>
+                </div>
+              </form>
+
+              <!-- ── Verification Result Section ── -->
+              <div id="verifyResult" style="display:none;">
+
+                <hr class="divider" />
+
+                <h6 style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">
+                  <i class="bi bi-hash me-1"></i>Hash Comparison
+                </h6>
+                <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+                  The document's computed hash is compared against the record stored on the blockchain ledger.
+                  <!-- Backend will connect here later — GET /api/contracts/hash/{document_id} -->
+                </p>
+
+                <!-- Hash boxes -->
+                <div class="hash-compare-row">
+                  <div class="hash-box" id="storedHashBox">
+                    <div class="hash-box-label"><i class="bi bi-database me-1"></i>Stored Hash (Ledger)</div>
+                    <div class="hash-box-value" id="storedHash">—</div>
+                  </div>
+                  <div class="hash-box" id="computedHashBox">
+                    <div class="hash-box-label"><i class="bi bi-cpu me-1"></i>Computed Hash (Current File)</div>
+                    <div class="hash-box-value" id="computedHash">—</div>
+                  </div>
+                </div>
+
+                <!-- Result Banner -->
+                <div class="result-banner idle" id="resultBanner">
+                  <div class="result-icon" id="resultIcon">
+                    <i class="bi bi-hourglass-split"></i>
+                  </div>
+                  <div style="flex:1;">
+                    <div class="result-title" id="resultTitle">Awaiting Verification</div>
+                    <div class="result-desc" id="resultDesc">Upload a document and click "Verify Document" to begin.</div>
+                    <!-- Timestamp row -->
+                    <div class="timestamp-row" id="resultTimestamp" style="display:none;">
+                      <i class="bi bi-clock"></i>
+                      <span>Verified at: <strong class="ts-value"></strong></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Block metadata placeholder -->
+                <div class="mt-4 p-3 surface-card" style="border-radius:var(--radius);">
+                  <div style="font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px;">
+                    Blockchain Record
+                    <!-- Backend will connect here later — GET /api/blockchain/block/{block_index} -->
+                  </div>
+                  <div class="row g-2">
+                    <div class="col-6 col-md-3">
+                      <div style="font-size:11px;color:var(--text-muted);">Block Index</div>
+                      <div class="mono fw-500" style="font-size:13px;">#4821</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <div style="font-size:11px;color:var(--text-muted);">Timestamp</div>
+                      <div class="mono fw-500" style="font-size:13px;">2025-01-15</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <div style="font-size:11px;color:var(--text-muted);">Uploader</div>
+                      <div class="fw-500" style="font-size:13px;">j.smith</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <div style="font-size:11px;color:var(--text-muted);">Clearance</div>
+                      <div class="fw-500" style="font-size:13px;"><span class="badge-status badge-pending clearance-confidential">Confidential</span></div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+              <!-- /verifyResult -->
+
+              <!-- Idle state (before any verification) -->
+              <div id="verifyIdle" class="mt-4">
+                <div class="result-banner idle">
+                  <div class="result-icon">
+                    <i class="bi bi-shield-check"></i>
+                  </div>
+                  <div>
+                    <div class="result-title">Ready to Verify</div>
+                    <div class="result-desc">Upload a PDF contract and click "Verify Document" to check its integrity against the blockchain ledger.</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Side Panel ── -->
+        <div class="col-lg-4">
+
+          <!-- Status Legend -->
+          <div class="card-app mb-4">
+            <div class="section-header">
+              <div class="section-title">Verification Outcomes</div>
+            </div>
+            <div class="p-4 d-flex flex-column gap-3">
+              <div class="d-flex gap-3 align-items-start">
+                <div style="width:36px;height:36px;border-radius:10px;background:var(--success-bg);color:var(--success);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">
+                  <i class="bi bi-patch-check-fill"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:var(--success);">Verified</div>
+                  <div style="font-size:12px;color:var(--text-secondary);">Hashes match. The document is authentic and has not been modified.</div>
+                </div>
+              </div>
+              <div class="d-flex gap-3 align-items-start">
+                <div style="width:36px;height:36px;border-radius:10px;background:var(--danger-bg);color:var(--danger);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">
+                  <i class="bi bi-shield-exclamation"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:var(--danger);">Tampered</div>
+                  <div style="font-size:12px;color:var(--text-secondary);">Hash mismatch detected. This document may have been altered since registration.</div>
+                </div>
+              </div>
+              <div class="d-flex gap-3 align-items-start">
+                <div style="width:36px;height:36px;border-radius:10px;background:var(--warning-bg);color:var(--warning);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">
+                  <i class="bi bi-question-circle-fill"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:var(--warning);">Not Found</div>
+                  <div style="font-size:12px;color:var(--text-secondary);">No matching record on the ledger. This document was not registered.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Demo note -->
+          <div class="card-app">
+            <div class="section-header">
+              <div class="section-title">Demo Behaviour</div>
+            </div>
+            <div class="p-4">
+              <div class="alert alert-warning d-flex gap-2 align-items-start mb-0" style="font-size:12px;">
+                <i class="bi bi-info-circle flex-shrink-0 mt-1"></i>
+                <div>
+                  Each verification click cycles through <strong>Verified</strong>, <strong>Tampered</strong>, and <strong>Not Found</strong> states using mock data.
+                  Real hash computation and ledger lookup will be handled by the backend.
+                  <!-- Backend will connect here later -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="script.js"></script>
+<script>
+  // Hide idle panel once result is shown
+  document.getElementById('verifyForm').addEventListener('submit', function() {
+    const idlePanel = document.getElementById('verifyIdle');
+    if (idlePanel) idlePanel.style.display = 'none';
+  });
+</script>
+</body>
+</html>
