@@ -2,6 +2,10 @@
 
 <hr>
 
+### Demo Video
+- **YouTube:** [Watch here](https://www.youtube.com/watch?v=HpUhjh-yPAk)
+- **Local:** `demo-video.mp4` (included in the repository)
+
 [Project_Plan_Final.xlsx](https://github.com/user-attachments/files/25420662/Project_Plan_Final.xlsx)
 
 <h2> Group members </h2>
